@@ -1,8 +1,13 @@
 from database import db
 
 class Note():
-    def __init__(self, note):
-        self.collection = db["notes"]
+    def __init__(self, note, test):
+        if test:
+            self.collection = db["test_notes"]
+        else:
+            self.collection = db["notes"]
+        
+        self.id = None
         self.note = note
         
     def find_by_id(self, id):
@@ -10,25 +15,35 @@ class Note():
             note = self.collection.find_one({"_id": id})
             return True
         except Exception as e:
-            return e.message
+            return e
         
     def create(self):
         try:
-            self.collection.insert_one({"note": self.note})
+            result = self.collection.insert_one({"note": self.note})
+            self._id = result.inserted_id
             return True
         except Exception as e:
-            return e.message
+            return e
         
-    def update_one(self, id, note):
-        try:
-            self.collection.find_one_and_update({"_id": id, "note": note})
-            return True
-        except Exception as e:
-            return e.message
+    def update(self, note):
+        if self._id != None:
+            try:
+                self.collection.update_one(
+                    {"_id": self._id}, 
+                    { "$set": {"note": note} }
+                )
+                return True
+            
+            except Exception as e:
+                return e
+        return False
         
-    def remove_one(self, id):
-        try:
-            self.collection.delete_one({"_id": id})    
-            return True
-        except Exception as e:
-            return e.message
+    def remove(self):
+        if self._id != None:
+            try:
+                self.collection.delete_one({"_id": self._id})
+                self._id = None    
+                return True
+            except Exception as e:
+                return e
+        return False
